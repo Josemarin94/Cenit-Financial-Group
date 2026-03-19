@@ -225,71 +225,23 @@ export default function App() {
               <p className="text-white/50">Déjanos tus datos y un especialista senior se pondrá en contacto contigo para una sesión estratégica.</p>
             </div>
 
-            <div className="bg-white/[0.02] border border-cenit-gold/20 p-8 md:p-12 rounded-3xl shadow-2xl">
-              <form className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <label htmlFor="footer_first_name" className="block text-xs uppercase tracking-widest text-white/50 mb-2 ml-1">Nombre Completo</label>
-                    <input 
-                      type="text" 
-                      id="footer_first_name" 
-                      name="first_name" 
-                      required 
-                      placeholder="Ej. Juan Pérez"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-cenit-gold transition-colors text-white placeholder:text-white/20"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="footer_profile" className="block text-xs uppercase tracking-widest text-white/50 mb-2 ml-1">Prioridad Actual</label>
-                    <select 
-                      id="footer_profile" 
-                      name="profile" 
-                      required
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-cenit-gold transition-colors text-white appearance-none cursor-pointer"
-                    >
-                      <option value="" disabled selected className="bg-cenit-black">Seleccione una opción</option>
-                      <option value="vida" className="bg-cenit-black">Blindaje Patrimonial (Vida)</option>
-                      <option value="salud" className="bg-cenit-black">Cobertura Global (Salud)</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <label htmlFor="footer_email" className="block text-xs uppercase tracking-widest text-white/50 mb-2 ml-1">Correo Electrónico</label>
-                    <input 
-                      type="email" 
-                      id="footer_email" 
-                      name="email" 
-                      required 
-                      placeholder="juan@ejemplo.com"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-cenit-gold transition-colors text-white placeholder:text-white/20"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="footer_phone" className="block text-xs uppercase tracking-widest text-white/50 mb-2 ml-1">Teléfono</label>
-                    <input 
-                      type="tel" 
-                      id="footer_phone" 
-                      name="phone" 
-                      required 
-                      placeholder="+1 (555) 000-0000"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-cenit-gold transition-colors text-white placeholder:text-white/20"
-                    />
-                  </div>
-                </div>
-
-                <button 
-                  type="submit" 
-                  className="w-full bg-cenit-gold-light text-cenit-black font-bold py-5 rounded-xl hover:bg-cenit-gold transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.99] mt-4 shadow-xl shadow-cenit-gold/20 uppercase tracking-widest"
-                >
-                  Solicitar Diagnóstico Gratuito
-                </button>
-                
-                <p className="text-[10px] text-center text-white/30">
-                  Al enviar, aceptas ser contactado por un asesor de Cenit Financial Group.
-                </p>
-              </form>
+            <div className="bg-white/[0.02] border border-cenit-gold/20 p-4 md:p-8 rounded-3xl shadow-2xl overflow-hidden">
+              <div className="w-full min-h-[500px]">
+                <iframe
+                  src="https://api.leadconnectorhq.com/widget/form/yLMDV8ab0z1V2wRgNnJT"
+                  style={{ width: '100%', height: '600px', border: 'none' }}
+                  id="inline-footer-yLMDV8ab0z1V2wRgNnJT"
+                  data-layout="{'id':'INLINE'}"
+                  data-trigger-type="alwaysShow"
+                  data-trigger-value=""
+                  data-activation-type="alwaysActivated"
+                  data-activation-value=""
+                  data-form-name="Formulario de Registro"
+                  data-contact-fields="{'first_name':'First Name','last_name':'Last Name','email':'Email','phone':'Phone'}"
+                  title="Formulario de Registro"
+                ></iframe>
+                <script src="https://link.msgsndr.com/js/form_embed.js"></script>
+              </div>
             </div>
           </div>
         </section>
@@ -350,75 +302,22 @@ export default function App() {
                 <h2 className="text-3xl font-bold mb-2 text-center">Diagnóstico de Protección</h2>
                 <p className="text-white/50 text-center mb-8">Completa tus datos para recibir una asesoría personalizada de élite.</p>
                 
-                <form className="space-y-5">
-                  {/* Profile Selection for Tagging */}
-                  <div>
-                    <label htmlFor="profile" className="block text-xs uppercase tracking-widest text-white/50 mb-2 ml-1">¿Cuál es su prioridad actual?</label>
-                    <select 
-                      id="profile" 
-                      name="profile" 
-                      required
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-cenit-gold transition-colors text-white appearance-none cursor-pointer"
-                    >
-                      <option value="" disabled selected className="bg-cenit-black">Seleccione una opción</option>
-                      <option value="vida" className="bg-cenit-black">Blindaje Patrimonial (Vida)</option>
-                      <option value="salud" className="bg-cenit-black">Cobertura Global (Salud)</option>
-                    </select>
-                  </div>
-
-                  {/* GHL Critical Fields */}
-                  <div>
-                    <label htmlFor="first_name" className="block text-xs uppercase tracking-widest text-white/50 mb-2 ml-1">Nombre Completo</label>
-                    <input 
-                      type="text" 
-                      id="first_name" 
-                      name="first_name" 
-                      required 
-                      placeholder="Ej. Juan Pérez"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-cenit-gold transition-colors text-white placeholder:text-white/20"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="email" className="block text-xs uppercase tracking-widest text-white/50 mb-2 ml-1">Correo Electrónico</label>
-                    <input 
-                      type="email" 
-                      id="email" 
-                      name="email" 
-                      required 
-                      placeholder="juan@ejemplo.com"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-cenit-gold transition-colors text-white placeholder:text-white/20"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="phone" className="block text-xs uppercase tracking-widest text-white/50 mb-2 ml-1">Teléfono</label>
-                    <input 
-                      type="tel" 
-                      id="phone" 
-                      name="phone" 
-                      required 
-                      placeholder="+1 (555) 000-0000"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-cenit-gold transition-colors text-white placeholder:text-white/20"
-                    />
-                  </div>
-
-                  {/* Hidden Fields for UTMs */}
-                  <input type="hidden" name="utm_source" value="" />
-                  <input type="hidden" name="utm_medium" value="" />
-                  <input type="hidden" name="utm_campaign" value="" />
-
-                  <button 
-                    type="submit" 
-                    className="w-full bg-cenit-gold-light text-cenit-black font-bold py-4 rounded-xl hover:bg-cenit-gold transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] mt-4 shadow-lg shadow-cenit-gold/20"
-                  >
-                    ENVIAR SOLICITUD
-                  </button>
-                  
-                  <p className="text-[10px] text-center text-white/30 mt-4">
-                    Tus datos están protegidos bajo estrictos estándares de confidencialidad.
-                  </p>
-                </form>
+                <div className="w-full min-h-[500px] bg-white/5 rounded-2xl overflow-hidden border border-white/10">
+                  <iframe
+                    src="https://api.leadconnectorhq.com/widget/form/yLMDV8ab0z1V2wRgNnJT"
+                    style={{ width: '100%', height: '600px', border: 'none' }}
+                    id="inline-yLMDV8ab0z1V2wRgNnJT"
+                    data-layout="{'id':'INLINE'}"
+                    data-trigger-type="alwaysShow"
+                    data-trigger-value=""
+                    data-activation-type="alwaysActivated"
+                    data-activation-value=""
+                    data-form-name="Formulario de Registro"
+                    data-contact-fields="{'first_name':'First Name','last_name':'Last Name','email':'Email','phone':'Phone'}"
+                    title="Formulario de Registro"
+                  ></iframe>
+                  <script src="https://link.msgsndr.com/js/form_embed.js"></script>
+                </div>
               </div>
 
               {/* Background Accent in Modal */}
