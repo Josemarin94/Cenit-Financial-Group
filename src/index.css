@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cenit-black: #0a0a0a;
+  --color-cenit-gold: #c9a84c;
+  --color-cenit-gold-light: #f5df94;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+body {
+  background-color: var(--color-cenit-black);
+  color: white;
+}
