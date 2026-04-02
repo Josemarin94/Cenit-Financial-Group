@@ -4,8 +4,9 @@
  */
 
 import { Shield, Clock, Smartphone, Phone, X } from 'lucide-react';
+import Simulator from './Simulator';
 import { motion, AnimatePresence } from 'motion/react';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 export default function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -212,6 +213,20 @@ export default function App() {
                 </p>
               </motion.div>
             </div>
+          </div>
+        </section>
+
+
+        {/* Simulator Section */}
+        <section id="simulador" className="py-24 bg-cenit-black relative overflow-hidden border-t border-cenit-gold/10">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cenit-gold/3 rounded-full blur-[150px] pointer-events-none" />
+          <div className="max-w-3xl mx-auto px-6 relative z-10">
+            <div className="text-center mb-12">
+              <span className="inline-block px-4 py-1 rounded-full bg-cenit-gold/10 text-cenit-gold text-[10px] uppercase tracking-widest font-bold mb-6">Exclusivo para Agentes</span>
+              <h2 className="text-3xl md:text-5xl font-bold mb-4">Simulador de <span className="text-cenit-gold">Entrenamiento</span></h2>
+              <p className="text-white/50">Practica llamadas reales con un cliente venezolano impulsado por IA. Recibe evaluación detallada al finalizar.</p>
+            </div>
+            <Simulator />
           </div>
         </section>
 
