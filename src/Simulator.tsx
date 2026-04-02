@@ -4,10 +4,19 @@ import { motion, AnimatePresence } from 'motion/react';
 
 type Message = { role: 'user' | 'assistant'; content: string };
 
+const MIC_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutos
+
 const getVoice = (): SpeechSynthesisVoice | null => {
   const voices = window.speechSynthesis.getVoices();
-  return voices.find(v => v.lang.startsWith('es') && v.name.toLowerCase().includes('male'))
-    || voices.find(v => v.lang.startsWith('es-US'))
+  // Voces femeninas en español — orden de preferencia
+  return voices.find(v => v.lang.startsWith('es') && v.name.toLowerCase().includes('paulina'))
+    || voices.find(v => v.lang.startsWith('es') && v.name.toLowerCase().includes('monica'))
+    || voices.find(v => v.lang.startsWith('es') && v.name.toLowerCase().includes('lucia'))
+    || voices.find(v => v.lang.startsWith('es') && v.name.toLowerCase().includes('paloma'))
+    || voices.find(v => v.lang.startsWith('es') && v.name.toLowerCase().includes('female'))
+    || voices.find(v => v.lang.startsWith('es') && !v.name.toLowerCase().includes('male'))
+    || voices.find(v => v.lang === 'es-US')
+    || voices.find(v => v.lang === 'es-MX')
     || voices.find(v => v.lang.startsWith('es'))
     || null;
 };
@@ -22,15 +31,23 @@ export default function Simulator() {
   const [transcript, setTranscript] = useState('');
   const [textInput, setTextInput] = useState('');
   const [micActive, setMicActive] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(MIC_TIMEOUT_MS);
+  const [micExpired, setMicExpired] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const messagesRef = useRef<Message[]>([]);
   const loadingRef = useRef(false);
   const speakingRef = useRef(false);
+  const callEndedRef = useRef(false);
+  const micTimerRef = useRef<any>(null);
+  const micCountdownRef = useRef<any>(null);
+  const micStartTimeRef = useRef<number>(0);
+
   messagesRef.current = messages;
   loadingRef.current = loading;
   speakingRef.current = speaking;
+  callEndedRef.current = callEnded;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -42,7 +59,16 @@ export default function Simulator() {
     return () => {
       window.speechSynthesis.cancel();
       recognitionRef.current?.abort();
+      clearTimeout(micTimerRef.current);
+      clearInterval(micCountdownRef.current);
     };
+  }, []);
+
+  const stopMic = useCallback(() => {
+    recognitionRef.current?.abort();
+    setMicActive(false);
+    clearTimeout(micTimerRef.current);
+    clearInterval(micCountdownRef.current);
   }, []);
 
   const speak = useCallback((text: string, onDone?: () => void) => {
@@ -53,8 +79,8 @@ export default function Simulator() {
     const voice = getVoice();
     if (voice) utterance.voice = voice;
     utterance.lang = 'es-ES';
-    utterance.rate = 0.9;
-    utterance.pitch = 0.85;
+    utterance.rate = 0.88;   // un poco mas lento — mas humano
+    utterance.pitch = 1.15;  // tono mas femenino y natural
     utterance.volume = 1;
     utterance.onstart = () => { setSpeaking(true); speakingRef.current = true; };
     utterance.onend = () => { setSpeaking(false); speakingRef.current = false; onDone?.(); };
@@ -84,29 +110,28 @@ export default function Simulator() {
       const updated: Message[] = [...newMessages, { role: 'assistant', content: reply }];
       setMessages(updated);
       setLoading(false);
-      // Speak then re-enable mic listening
-      speak(reply, () => {
-        speakingRef.current = false;
-      });
+      speak(reply, () => { speakingRef.current = false; });
       const lower = reply.toLowerCase();
       if (lower.includes('que tengas buen dia') || lower.includes('cuelga') || lower.includes('llamada terminada')) {
         setCallEnded(true);
+        callEndedRef.current = true;
+        stopMic();
       }
     } catch {
       setMessages([...newMessages, { role: 'assistant', content: 'Error de conexión.' }]);
       setLoading(false);
     }
-  }, [speak]);
+  }, [speak, stopMic]);
 
-  // Start continuous mic — restarts automatically after each phrase
   const startContinuousMic = useCallback(() => {
+    if (callEndedRef.current) return;
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) return;
 
     const recognition = new SpeechRecognition();
     recognitionRef.current = recognition;
     recognition.lang = 'es-ES';
-    recognition.continuous = false; // false = auto-detects end of speech
+    recognition.continuous = false;
     recognition.interimResults = true;
     recognition.maxAlternatives = 1;
 
@@ -126,7 +151,6 @@ export default function Simulator() {
     };
 
     recognition.onend = () => {
-      // If we have text and not loading/speaking, send it
       if (finalText.trim() && !loadingRef.current) {
         sendMessage(finalText.trim());
         finalText = '';
@@ -134,39 +158,69 @@ export default function Simulator() {
         finalText = '';
         setTranscript('');
       }
-      // Restart mic automatically unless call ended
+      // Restart unless expired or call ended
       setTimeout(() => {
-        if (!loadingRef.current) {
-          startContinuousMic();
-        } else {
-          // Wait for loading to finish then restart
-          const wait = setInterval(() => {
-            if (!loadingRef.current && !speakingRef.current) {
-              clearInterval(wait);
-              startContinuousMic();
-            }
-          }, 500);
+        if (!callEndedRef.current && !micExpired) {
+          if (!loadingRef.current) {
+            startContinuousMic();
+          } else {
+            const wait = setInterval(() => {
+              if (!loadingRef.current && !speakingRef.current && !callEndedRef.current) {
+                clearInterval(wait);
+                startContinuousMic();
+              }
+            }, 500);
+          }
         }
       }, 300);
     };
 
     recognition.onerror = (e: any) => {
-      if (e.error === 'no-speech' || e.error === 'aborted') {
-        // Just restart silently
-        return;
-      }
+      if (e.error === 'no-speech' || e.error === 'aborted') return;
       setMicActive(false);
     };
 
     try { recognition.start(); } catch { }
-  }, [sendMessage]);
+  }, [sendMessage, micExpired]);
+
+  const startMicWithTimer = useCallback(() => {
+    micStartTimeRef.current = Date.now();
+    setTimeLeft(MIC_TIMEOUT_MS);
+    setMicExpired(false);
+
+    // Countdown display
+    clearInterval(micCountdownRef.current);
+    micCountdownRef.current = setInterval(() => {
+      const elapsed = Date.now() - micStartTimeRef.current;
+      const remaining = MIC_TIMEOUT_MS - elapsed;
+      if (remaining <= 0) {
+        setTimeLeft(0);
+        clearInterval(micCountdownRef.current);
+      } else {
+        setTimeLeft(remaining);
+      }
+    }, 1000);
+
+    // Kill mic after 15 min
+    clearTimeout(micTimerRef.current);
+    micTimerRef.current = setTimeout(() => {
+      setMicExpired(true);
+      setMicActive(false);
+      recognitionRef.current?.abort();
+      clearInterval(micCountdownRef.current);
+    }, MIC_TIMEOUT_MS);
+
+    startContinuousMic();
+  }, [startContinuousMic]);
 
   const startSimulation = async () => {
     setStarted(true);
     setCallEnded(false);
+    callEndedRef.current = false;
     setMessages([]);
     setLoading(true);
     setTranscript('');
+    setMicExpired(false);
     const initMsg: Message[] = [{ role: 'user', content: 'Iniciar simulación' }];
     setMessages(initMsg);
     try {
@@ -180,8 +234,7 @@ export default function Simulator() {
       setMessages([...initMsg, { role: 'assistant', content: reply }]);
       setLoading(false);
       speak(reply, () => {
-        // Start mic after client finishes speaking
-        startContinuousMic();
+        startMicWithTimer();
       });
     } catch {
       setMessages([...initMsg, { role: 'assistant', content: 'Error de conexión.' }]);
@@ -192,14 +245,26 @@ export default function Simulator() {
   const reset = () => {
     window.speechSynthesis.cancel();
     recognitionRef.current?.abort();
+    clearTimeout(micTimerRef.current);
+    clearInterval(micCountdownRef.current);
     setMessages([]);
     setStarted(false);
     setCallEnded(false);
+    callEndedRef.current = false;
     setTranscript('');
     setMicActive(false);
     setSpeaking(false);
     setTextInput('');
     setLoading(false);
+    setMicExpired(false);
+    setTimeLeft(MIC_TIMEOUT_MS);
+  };
+
+  const formatTime = (ms: number) => {
+    const totalSec = Math.ceil(ms / 1000);
+    const m = Math.floor(totalSec / 60);
+    const s = totalSec % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
   const isEval = messages.some(m => m.role === 'user' && m.content.toUpperCase().includes('EVALUAME'));
@@ -224,11 +289,22 @@ export default function Simulator() {
               : callEnded ? 'Llamada Terminada'
               : speaking ? '🔊 Cliente hablando...'
               : loading ? '⏳ Procesando...'
-              : micActive ? '🎙️ Micrófono activo — habla cuando quieras'
-              : 'Conectando micrófono...'}
+              : micExpired ? '⏰ Sesión expirada'
+              : micActive ? '🎙️ Micrófono activo'
+              : 'Conectando...'}
           </span>
         </div>
         <div className="flex items-center gap-3">
+          {/* Timer */}
+          {started && !callEnded && !micExpired && (
+            <span className={`text-xs font-mono px-2 py-1 rounded-lg border ${
+              timeLeft < 60000
+                ? 'text-red-400 border-red-400/20 bg-red-400/5'
+                : 'text-white/30 border-white/10'
+            }`}>
+              {formatTime(timeLeft)}
+            </span>
+          )}
           {started && (
             <button onClick={() => { setVoiceEnabled(v => !v); window.speechSynthesis.cancel(); setSpeaking(false); }}
               className="text-white/40 hover:text-cenit-gold transition-colors">
@@ -257,13 +333,13 @@ export default function Simulator() {
                   Simulador de <span className="text-cenit-gold">Llamadas</span>
                 </h3>
                 <p className="text-white/40 text-sm max-w-xs leading-relaxed">
-                  El micrófono se activa automáticamente. Habla cuando quieras, como en una llamada real.
+                  Micrófono abierto durante 15 minutos. Habla cuando quieras, como en una llamada real.
                 </p>
               </div>
               <div className="grid grid-cols-3 gap-3 max-w-sm w-full">
                 {[
-                  { icon: '🎙️', text: 'Micrófono siempre abierto' },
-                  { icon: '🤖', text: 'Cliente detecta pausas' },
+                  { icon: '🎙️', text: 'Micrófono abierto 15 min' },
+                  { icon: '🤖', text: 'Detecta pausas y responde' },
                   { icon: '📊', text: 'Di EVALUAME al final' },
                 ].map((item, i) => (
                   <div key={i} className="bg-white/[0.03] border border-cenit-gold/10 rounded-xl p-3">
@@ -323,10 +399,18 @@ export default function Simulator() {
                 </motion.div>
               )}
 
+              {micExpired && !callEnded && (
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex justify-center py-2">
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-xs">
+                    ⏰ Sesión de 15 min expirada — escribe para continuar
+                  </div>
+                </motion.div>
+              )}
+
               {callEnded && !isEval && (
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex justify-center py-2">
                   <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
-                    <PhoneOff size={12} /> El cliente colgó — di "EVALUAME" para ver tu puntuación
+                    <PhoneOff size={12} /> El cliente colgó — di "EVALUAME" para tu puntuación
                   </div>
                 </motion.div>
               )}
@@ -336,11 +420,10 @@ export default function Simulator() {
         </AnimatePresence>
       </div>
 
-      {/* Bottom bar — solo texto como fallback */}
+      {/* Bottom */}
       {started && (
         <div className="px-4 md:px-6 py-3 border-t border-cenit-gold/10 bg-cenit-black/60 flex-shrink-0">
           <div className="flex items-center gap-3 mb-2">
-            {/* Mic indicator */}
             <div className={`flex items-center gap-2 flex-1 px-3 py-2 rounded-xl border transition-colors ${
               speaking ? 'border-cenit-gold/30 bg-cenit-gold/5'
               : loading ? 'border-yellow-500/20 bg-yellow-500/5'
@@ -356,11 +439,11 @@ export default function Simulator() {
               <span className="text-xs text-white/30">
                 {speaking ? 'Cliente hablando — espera tu turno'
                   : loading ? 'Procesando respuesta...'
+                  : micExpired ? 'Sesión expirada — usa el teclado'
                   : micActive ? 'Micrófono abierto — habla cuando quieras'
                   : 'Iniciando micrófono...'}
               </span>
             </div>
-
             {speaking && (
               <button onClick={() => { window.speechSynthesis.cancel(); setSpeaking(false); speakingRef.current = false; }}
                 className="px-3 py-2 rounded-xl border border-white/10 text-white/30 hover:text-cenit-gold hover:border-cenit-gold/30 transition-colors text-xs flex-shrink-0">
@@ -368,8 +451,6 @@ export default function Simulator() {
               </button>
             )}
           </div>
-
-          {/* Text fallback */}
           <div className="flex gap-2">
             <input type="text" value={textInput}
               onChange={e => setTextInput(e.target.value)}
